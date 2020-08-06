@@ -78,3 +78,9 @@ Some extra magics help navigating the test code/documentation::
     In [7]: # Fixture code
     In [8]: %pytest_fixtureinfodetail my_fixture
     ...
+
+
+License
+-------
+
+This project is licensed under the MIT license - see the [LICENSE](https://github.com/nokia/pytest-exploratory/blob/master/LICENSE).
