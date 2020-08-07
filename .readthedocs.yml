@@ -1,3 +1,6 @@
+build:
+    image: latest
+
 version: 2
 sphinx:
   configuration: doc/conf.py
@@ -5,3 +8,5 @@ python:
   version: 3.7
   install:
     - requirements: doc/requirements.txt
+    - method: pip
+        path: .
