@@ -3,6 +3,15 @@ pytest-exploratory
 
 Control a pytest session interactively from IPython for exploratory testing.
 
+For more details, `see the documentation <https://pytest-exploratory.readthedocs.io/en/latest/>`_.
+
+Installation
+------------
+
+The extension is available on `PyPI <https://pypi.org/project/pytest-exploratory/>`_ and depends on IPython and pytest::
+
+    pip install pytest-exploratory
+
 Usage
 -----
 
