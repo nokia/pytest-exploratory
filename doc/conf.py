@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 #
-import warnings
 import sys
-import itertools
-import logging
-from os import environ
 from pathlib import Path
-import sphinx.ext.intersphinx
-import sphinx.environment
-import sphinx_autodoc_typehints
-import sphinx.ext.autosummary
-import sphinx.ext.autosummary.generate
 
 
 _thisdir = Path(__file__).parent.resolve()
