@@ -34,6 +34,10 @@ def test_simple_interactive_session(testdir, session):
     """)
     session.start()
     session.session_start()
+    with pytest.raises(Exception):
+        # Shoud fail, but next collect should work
+        session.context("test_does_not_exist.py")
+    session.context("test_simple_interactive_session.py")
     session.collect("test_simple_interactive_session.py")
     session.context("test_simple_interactive_session.py::test_empty")
     session.fixture('afix')
@@ -121,3 +125,18 @@ def test_something():
 def test_no_context(testdir, session):
     request = session.fixture("request")
     assert request is not None
+
+
+def test_change_context(testdir, session):
+    testdir.makepyfile(
+        """
+        def test_something():
+            pass
+        """,
+        test_other="""
+        def test_other():
+            pass
+        """,
+    )
+    session.context("test_change_context.py")
+    session.context("test_other.py")

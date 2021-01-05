@@ -89,7 +89,10 @@ class InteractiveSession:
         self.config.option.continue_on_collection_errors = True
         # Might be useful
         # config.pluginmanager._duplicatepaths.clear()
-        # self.config.option.keepduplicates
+        try:
+            self.config.option.keepduplicates = True
+        except AttributeError:
+            pass
 
     def session_start(self):
         """Start a pytest session."""
@@ -117,9 +120,11 @@ class InteractiveSession:
             is_in_root = False
         if not is_in_root:
             self.config.args.append(path)
-        self.config.hook.pytest_collection(session=self.session)
-        if not is_in_root:
-            self.config.args.pop()
+        try:
+            self.config.hook.pytest_collection(session=self.session)
+        finally:
+            if not is_in_root:
+                self.config.args.pop()
 
     def _dummy_item(self, item, context_param=""):
         # TODO support class methods
@@ -208,7 +213,12 @@ def test_exists():
         if context == "":
             return self._dummy_context()
         item = None
-        if not hasattr(self.session, 'items'):
+        # TODO parse the context to better handle parametrization
+        # TODO find the right item as a tree traversal from the root instead
+        for item in getattr(self.session, 'items', []):
+            if item.nodeid.startswith(context):
+                break
+        if item is None or not item.nodeid.startswith(context):
             if '::' in context:
                 fspath, _ = context.split('::', 1)
             else:
@@ -217,7 +227,7 @@ def test_exists():
                 else:
                     fspath = context
             self.collect(fspath)
-        for item in self.session.items:
+        for item in getattr(self.session, 'items', []):
             if item.nodeid.startswith(context):
                 break
         if item is None:
@@ -235,6 +245,10 @@ def test_exists():
                 context_param = ""
             while not context.endswith(item.nodeid):
                 item = item.parent
+            if isinstance(item, Session):
+                raise Exception(
+                    f"Unknown context {context}"
+                )
             self.context_node = item
             item = self._dummy_item(item, context_param)
         self.context_item = item
