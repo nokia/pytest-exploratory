@@ -140,3 +140,32 @@ def test_change_context(testdir, session):
     )
     session.context("test_change_context.py")
     session.context("test_other.py")
+
+
+def test_class(testdir, session):
+    testdir.makepyfile("""
+import pytest
+
+
+@pytest.fixture()
+def fix1():
+    pass
+
+
+@pytest.fixture()
+def fix2():
+    pass
+
+
+def test_case(fix1, fix2):
+    pass
+
+class TestClass:
+    def test_case(self, fix1, fix2):
+        pass
+    """)
+    session.start()
+    session.session_start()
+    session.context("test_class.py")
+    session.runtests()
+    session.runtests()

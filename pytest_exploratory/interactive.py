@@ -38,6 +38,13 @@ def request_teardown(request, fixturename):
         pass
 
 
+def _is_child(item, nodeid):
+    while item is not None:
+        if item.nodeid == nodeid:
+            return True
+        item = item.parent
+    return False
+
 class _FilterCollection:
     def __init__(self, root, path=""):
         self.root = root
@@ -111,6 +118,9 @@ class InteractiveSession:
         """Collect tests under the given path."""
         if self.session is None:
             self.session_start()
+        nodeid = path
+        if "::" in nodeid:
+            path = nodeid.split("::", 1)[0]
         self._filter.path = path
         # Pytest discovers tests outside of the root through arguments
         try:
@@ -125,6 +135,11 @@ class InteractiveSession:
         finally:
             if not is_in_root:
                 self.config.args.pop()
+        # TODO filter this in plugin?
+        items = list(self.session.items)
+        if nodeid != path:
+            items = [item for item in items if _is_child(item, nodeid)]
+        return items
 
     def _dummy_item(self, item, context_param=""):
         # TODO support class methods
@@ -284,7 +299,7 @@ def test_exists():
             items = [self.context_item]
             lastitem = self._dummy_item(self.context_item.parent)
         else:
-            items = self.context_node.collect()
+            items = self.collect(self.context_node.nodeid)
             lastitem = self.context_item
         for i, item in enumerate(items):
             nextitem = items[i + 1] if i + 1 < len(items) else lastitem
