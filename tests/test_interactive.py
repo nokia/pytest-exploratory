@@ -1,9 +1,10 @@
 import pytest
+import os
 from pytest_exploratory.interactive import InteractiveSession
 
 
 @pytest.fixture
-def session():
+def session(testdir):
     session = InteractiveSession()
     yield session
     session.session_stop()
@@ -168,4 +169,50 @@ class TestClass:
     session.session_start()
     session.context("test_class.py")
     session.runtests()
+    assert session.session.testsfailed == 0
     session.runtests()
+    assert session.session.testsfailed == 0
+
+
+def test_dir(testdir, session):
+    r = testdir.mkpydir("atest")
+    suite = r.mkdir("suite")
+    suite.join("__init__.py").write("")
+    suite.join("test_something.py").write("""
+import pytest
+
+@pytest.fixture()
+def fixture():
+    return 1
+
+def test_x(fixture):
+    assert fixture == 1
+""")
+    session.start()
+    session.session_start()
+    session.context("atest/suite/test_something.py")
+    session.runtests()
+    assert session.session.testsfailed == 0
+
+
+def test_reload(testdir, session):
+    testdir.makepyfile("""
+class TestClass:
+    def test_case(self):
+        assert 1 == 1
+    """)
+    session.start()
+    session.session_start()
+    session.context("test_reload.py::TestClass::test_case")
+    session.runtests()
+    assert session.session.testsfailed == 0
+    testdir.makepyfile("""
+class TestClass:
+    def test_case(self):
+        assert 1 == 2
+    """)
+    # TODO better way to detect changes
+    stat = os.stat("test_reload.py")
+    os.utime("test_reload.py", times=(stat.st_atime + 2, stat.st_mtime + 2))
+    session.runtests()
+    assert session.session.testsfailed == 1

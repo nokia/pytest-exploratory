@@ -1,5 +1,7 @@
 """Run a pytest session interactively."""
 
+import sys
+import inspect
 import logging
 from pathlib import Path
 import tempfile
@@ -58,6 +60,27 @@ class _FilterCollection:
         if self.path.startswith(path):
             return
         return True
+
+
+def _reload_items(items):
+    for item in items:
+        try:
+            obj = item._getobj()
+        except (AttributeError, TypeError):
+            continue
+        if not inspect.ismethod(obj):
+            continue
+        if not hasattr(obj, "__self__"):
+            continue
+        obj_self = obj.__self__
+        try:
+            mod = sys.modules[obj_self.__class__.__module__]
+        except KeyError:
+            continue
+        if not hasattr(mod, obj_self.__class__.__name__):
+            continue
+        cls = getattr(mod, obj_self.__class__.__name__)
+        setattr(obj_self.__class__, obj.__name__, getattr(cls, obj.__name__))
 
 
 class InteractiveSession:
@@ -278,29 +301,34 @@ def test_exists():
         return fixtures
 
     def _reload(self):
+        reloaded = False
         # TODO is it possible to reload the fixtures/fixture code?
         if self.context_item is None:
-            return
+            return reloaded
         module = self.context_item
         while not isinstance(module, pytest.Module):
             if module is None:
-                return
+                return reloaded
             module = module.parent
         path = Path(module.nodeid)
         mtime = path.stat().st_mtime
         if self._mtime is not None and mtime > self._mtime:
             reload(module.obj)
+            reloaded = True
         self._mtime = mtime
+        return reloaded
 
     def runtests(self):
         """Run the tests under the current context."""
-        self._reload()
+        reloaded = self._reload()
         if self.context_item is self.context_node:
             items = [self.context_item]
             lastitem = self._dummy_item(self.context_item.parent)
         else:
             items = self.collect(self.context_node.nodeid)
             lastitem = self.context_item
+        if reloaded:
+            _reload_items(items)
         for i, item in enumerate(items):
             nextitem = items[i + 1] if i + 1 < len(items) else lastitem
             self.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
