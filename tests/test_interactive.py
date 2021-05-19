@@ -45,6 +45,7 @@ def test_simple_interactive_session(testdir, session):
     with pytest.raises(Exception):
         session.fixture('errorfixture')
     session.runtests()
+    assert session.session.testsfailed == 0
     fixtures = session.context("test_simple_interactive_session.py::TestClass::test_class_test")
     assert "class_fixture" in fixtures
     assert fixtures["class_fixture"] == 10

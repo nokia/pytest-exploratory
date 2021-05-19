@@ -100,6 +100,12 @@ class InteractiveSession:
         self._mtime = None
         self._fixturenames = None
 
+    def _teardown_if_needed(self, item, nextitem):
+        try:
+            self.session._setupstate.teardown_exact(item, nextitem)
+        except AssertionError:
+            pass
+
     def start(self, args=None):
         """Initialize the pytest config from the given arguments."""
         if self.config is None:
@@ -289,7 +295,11 @@ def test_exists():
                 )
             self.context_node = item
             item = self._dummy_item(item, context_param)
+        if self.context_item is not None:
+            self._teardown_if_needed(self.context_item, item)
         self.context_item = item
+        if hasattr(item, "_request") and isinstance(item._request, bool):
+            item._initrequest()
         self.config.hook.pytest_runtest_setup(item=item, when="setup")
         self._request = self.context_item._request
         fixtures = {}
@@ -329,6 +339,7 @@ def test_exists():
             lastitem = self.context_item
         if reloaded:
             _reload_items(items)
+        self._teardown_if_needed(lastitem, items[0])
         for i, item in enumerate(items):
             nextitem = items[i + 1] if i + 1 < len(items) else lastitem
             self.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
