@@ -40,6 +40,12 @@ def test_simple_interactive_session(testdir, session):
         session.context("test_does_not_exist.py")
     session.context("test_simple_interactive_session.py")
     session.collect("test_simple_interactive_session.py")
+    session.runtests()
+    assert session.session.testsfailed == 2
+    session.session.testsfailed = 0
+    session.runtests(["test_empty", "test_failfixture"])
+    assert session.session.testsfailed == 1
+    session.session.testsfailed = 0
     session.context("test_simple_interactive_session.py::test_empty")
     session.fixture('afix')
     with pytest.raises(Exception):

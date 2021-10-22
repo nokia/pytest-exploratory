@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 import tempfile
 from importlib import reload
+import re
 import warnings
 import pytest
 from _pytest.config import _prepareconfig
@@ -338,7 +339,16 @@ def test_exists():
             item = item.parent
         return reloaded
 
-    def runtests(self):
+    def _relative_name(self, item):
+        abs_part = self.context_node.nodeid
+        if not item.nodeid.startswith(abs_part):
+            raise Exception(f"Item {item.nodeid} is not relative to {abs_part}")
+        relative = item.nodeid[len(abs_part):]
+        # TODO better way to remove the separator
+        relative = relative.lstrip("/:[")
+        return relative
+
+    def runtests(self, testnames=tuple()):
         """Run the tests under the current context."""
         reloaded = self._reload()
         if self.context_item is self.context_node:
@@ -347,6 +357,13 @@ def test_exists():
         else:
             items = self.collect(self.context_node.nodeid)
             lastitem = self.context_item
+        if testnames:
+            regex = re.compile("|".join(re.escape(name) for name in testnames))
+            new_items = []
+            for item in items:
+                if regex.match(self._relative_name(item)):
+                    new_items.append(item)
+            items[:] = new_items
         if reloaded:
             _reload_items(items)
         self._teardown_if_needed(lastitem, items[0])

@@ -128,10 +128,9 @@ class PytestMagics(Magics):
         return self._session.fixturenames
 
     @line_magic
-    def pytest_runtests(self, dummy=""):
+    def pytest_runtests(self, testnames=""):
         """Run the tests in the current context."""
-        assert dummy == ""
-        self._session.runtests()
+        self._session.runtests(testnames.split())
 
     def _try_pytest_session_stop(self):
         if self._session.session is None:
