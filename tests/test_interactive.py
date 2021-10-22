@@ -217,3 +217,24 @@ class TestClass:
     os.utime("test_reload.py", times=(stat.st_atime + 2, stat.st_mtime + 2))
     session.runtests()
     assert session.session.testsfailed == 1
+
+
+def test_reload_function(testdir, session):
+    testdir.makepyfile(test_reload="""
+def test_case():
+    assert 1 == 1
+    """)
+    session.start()
+    session.session_start()
+    session.context("test_reload.py::test_case")
+    session.runtests()
+    assert session.session.testsfailed == 0
+    testdir.makepyfile(test_reload="""
+def test_case():
+    assert 1 == 2
+    """)
+    # TODO better way to detect changes
+    stat = os.stat("test_reload.py")
+    os.utime("test_reload.py", times=(stat.st_atime + 2, stat.st_mtime + 2))
+    session.runtests()
+    assert session.session.testsfailed == 1

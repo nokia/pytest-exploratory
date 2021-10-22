@@ -326,6 +326,16 @@ def test_exists():
             reload(module.obj)
             reloaded = True
         self._mtime = mtime
+        item = self.context_item
+        while item is not None:
+            if isinstance(item, pytest.Function) and getattr(item, "name", "") == "dummy":
+                item = item.parent
+                continue
+            try:
+                delattr(item, "_obj")
+            except (AttributeError, TypeError):
+                pass
+            item = item.parent
         return reloaded
 
     def runtests(self):
