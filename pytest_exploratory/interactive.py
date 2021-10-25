@@ -345,7 +345,7 @@ def test_exists():
             raise Exception(f"Item {item.nodeid} is not relative to {abs_part}")
         relative = item.nodeid[len(abs_part):]
         # TODO better way to remove the separator
-        relative = relative.lstrip("/:[")
+        relative = relative.lstrip("/:")
         return relative
 
     def runtests(self, testnames=tuple()):
@@ -358,7 +358,8 @@ def test_exists():
             items = self.collect(self.context_node.nodeid)
             lastitem = self.context_item
         if testnames:
-            regex = re.compile("|".join(re.escape(name) for name in testnames))
+            # TODO better match on separator
+            regex = re.compile("(" + ("|".join(re.escape(name) for name in testnames)) + r")(/|::|\[|$)")
             new_items = []
             for item in items:
                 if regex.match(self._relative_name(item)):

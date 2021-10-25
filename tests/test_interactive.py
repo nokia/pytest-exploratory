@@ -22,6 +22,8 @@ def test_simple_interactive_session(testdir, session):
             raise Exception('Error in fixture')
         def test_empty():
             print('debug')
+        def test_empty_fail():
+            assert False
         def test_withfix(afix):
             assert 0 == 1
         def test_failfixture(errorfixture):
@@ -41,7 +43,7 @@ def test_simple_interactive_session(testdir, session):
     session.context("test_simple_interactive_session.py")
     session.collect("test_simple_interactive_session.py")
     session.runtests()
-    assert session.session.testsfailed == 2
+    assert session.session.testsfailed == 3
     session.session.testsfailed = 0
     session.runtests(["test_empty", "test_failfixture"])
     assert session.session.testsfailed == 1
