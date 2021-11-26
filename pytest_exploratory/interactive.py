@@ -258,6 +258,14 @@ def test_exists():
         if context == "":
             return self._dummy_context()
         item = None
+        root = self.session.config.rootpath.resolve()
+        cwd = Path.cwd().resolve()
+        try:
+            prefix = f"{root.relative_to(cwd)}/"
+        except ValueError:
+            prefix = ""
+        if prefix and context.startswith(prefix):
+            context = context[len(prefix):]
         # TODO parse the context to better handle parametrization
         # TODO find the right item as a tree traversal from the root instead
         for item in getattr(self.session, 'items', []):
