@@ -329,7 +329,9 @@ def test_exists():
             if module is None:
                 return reloaded
             module = module.parent
-        path = Path(module.nodeid)
+        if module.fspath is None:
+            return
+        path = Path(str(module.fspath))
         mtime = path.stat().st_mtime
         if self._mtime is not None and mtime > self._mtime:
             reload(module.obj)
