@@ -29,6 +29,8 @@ def test_simple_interactive_session(testdir, session):
         def test_failfixture(errorfixture):
             pass
         class TestClass:
+            def method(self):
+                return 1
             @pytest.fixture(scope="class")
             def class_fixture(self):
                 return 10
@@ -58,6 +60,8 @@ def test_simple_interactive_session(testdir, session):
     assert "class_fixture" in fixtures
     assert fixtures["class_fixture"] == 10
     assert session.fixture('class_fixture') == 10
+    assert "self" in fixtures
+    fixtures["self"].method() == 1
 
 
 def test_params(testdir, session):

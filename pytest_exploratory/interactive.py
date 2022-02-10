@@ -312,7 +312,10 @@ def test_exists():
         self.config.hook.pytest_runtest_setup(item=item, when="setup")
         self._request = self.context_item._request
         fixtures = {}
-        for fixturename in self._request.fixturenames:
+        extra_fixtures = []
+        if inspect.ismethod(self._request.node.obj):
+            extra_fixtures.append("self")
+        for fixturename in (*self._request.fixturenames, *extra_fixtures):
             try:
                 fixtures[fixturename] = self.fixture(fixturename)
             except Exception:
@@ -396,6 +399,10 @@ def test_exists():
 
     def fixture_with_name(self, fixturename):
         """Return the name and value of the given fixture."""
+        if fixturename == "self":
+            value = getattr(self._request.node.obj, "__self__", None)
+            if value is not None:
+                return "self", value
         if "[" in fixturename:
             fixturename, param = fixturename[:-1].split("[")
             self.fixture_param(fixturename, param)
