@@ -9,6 +9,8 @@ from importlib import reload
 import re
 import warnings
 import pytest
+import argparse
+import shlex
 from _pytest.config import _prepareconfig
 from _pytest.main import Session
 from _pytest.python import CallSpec2, Metafunc, FunctionDefinition
@@ -360,9 +362,31 @@ def test_exists():
         # TODO better way to remove the separator
         relative = relative.lstrip("/:")
         return relative
-
-    def runtests(self, testnames=tuple()):
+    
+    def runtests(self, line=""):
         """Run the tests under the current context."""
+        parser = argparse.ArgumentParser(
+            prog='pytest_runtests',
+            description='Runs selected tests in ipython'
+        )
+        parser.add_argument('-tests',
+                            nargs='*',
+                            default=tuple(),
+                            help='Tests that you want to run')
+        parser.add_argument('-k',
+                            nargs='?',
+                            default=None,
+                            help='-k flag for pytest')
+        parser.add_argument('-m',
+                            nargs='*',
+                            default=None,
+                            help='-m flag for pytest')
+        arguments = parser.parse_args(shlex.split(line))
+        if arguments.k:
+            self.config.option.keyword = arguments.k
+        if arguments.m:
+            self.config.option.markexpr = " ".join(arguments.m)
+        testnames = arguments.tests
         reloaded = self._reload()
         if self.context_item is self.context_node:
             items = [self.context_item]

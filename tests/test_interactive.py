@@ -250,3 +250,57 @@ def test_case():
     os.utime("test_reload.py", times=(stat.st_atime + 2, stat.st_mtime + 2))
     session.runtests()
     assert session.session.testsfailed == 1
+
+def test_runtest_parse(testdir, session):
+    testdir.makepyfile("""
+        import pytest
+
+        def test_basic1():
+            assert 1 == 1
+        
+        def test_basic2():
+            assert 1 == 1
+        
+        def test_inter1():
+            assert 1 == 1
+
+        def test_inter2():
+            assert 1 == 2 
+                       """)
+    session.start()
+    session.session_start()
+    session.context("test_runtest_parse.py")
+    session.runtests("-k basic")
+    assert session.session.testsfailed == 0
+    assert session.session.testscollected == 2
+    session.runtests("-k inter")
+    assert session.session.testscollected == 2
+    assert session.session.testsfailed == 1
+    testdir.makepyfile("""
+        import pytest
+        @pytest.mark.basic
+        def test_1():
+            assert 1 == 1
+        
+        def test_2():
+            assert 1 == 4
+        
+        @pytest.mark.inter
+        def test_3():
+            assert 1 == 3
+        
+        @pytest.mark.inter
+        @pytest.mark.basic
+        def test_inter2():
+            assert 1 == 2 
+                       """)
+    session.context("test_runtest_parse.py")
+    session.runtests("-m basic")
+    assert session.session.testsfailed == 2
+    session.runtests("-m basic and inter")
+    assert session.session.testscollected == 1
+    assert session.session.testsfailed == 3
+    session.runtests("-m inter and not basic")
+    assert session.session.testscollected == 1
+    assert session.session.testsfailed == 4
+

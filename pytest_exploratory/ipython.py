@@ -9,6 +9,7 @@ from typing import Optional, Callable, Any
 import warnings
 from pytest_exploratory.interactive import InteractiveSession
 
+
 sphinxify: Optional[Callable[[Any], Any]]
 try:
     import docrepr.sphinxify as sphx
@@ -128,14 +129,14 @@ class PytestMagics(Magics):
         return self._session.fixturenames
 
     @line_magic
-    def pytest_runtests(self, testnames=""):
+    def pytest_runtests(self, line=""):
         """Run the tests in the current context."""
         call_pdb = self.shell.call_pdb
         if call_pdb:
             old_usepdb = self._session.config.option.usepdb
             self._session.config.option.usepdb = True
         try:
-            self._session.runtests(testnames.split())
+            self._session.runtests(line)
         finally:
             if call_pdb:
                 self._session.config.option.usepdb = old_usepdb
