@@ -130,7 +130,16 @@ class PytestMagics(Magics):
     @line_magic
     def pytest_runtests(self, testnames=""):
         """Run the tests in the current context."""
-        self._session.runtests(testnames.split())
+        call_pdb = self.shell.call_pdb
+        if call_pdb:
+            old_usepdb = self._session.config.option.usepdb
+            self._session.config.option.usepdb = True
+        try:
+            self._session.runtests(testnames.split())
+        finally:
+            if call_pdb:
+                self._session.config.option.usepdb = old_usepdb
+
 
     def _try_pytest_session_stop(self):
         if self._session.session is None:
