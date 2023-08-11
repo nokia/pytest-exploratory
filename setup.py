@@ -4,7 +4,7 @@ test_requirements = ['pytest']
 
 setup(
     name='pytest_exploratory',
-    version='0.7.2',
+    version='0.8.0',
     description='Interactive console for pytest.',
     url='https://github.com/nokia/pytest-exploratory',
     author='Iwan Briquemont',
