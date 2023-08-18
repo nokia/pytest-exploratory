@@ -136,11 +136,12 @@ class PytestMagics(Magics):
             old_usepdb = self._session.config.option.usepdb
             self._session.config.option.usepdb = True
         try:
-            self._session.runtests(line)
+            self._session.runtests(shlex.split(line))
+        except SystemExit:
+            pass
         finally:
             if call_pdb:
                 self._session.config.option.usepdb = old_usepdb
-
 
     def _try_pytest_session_stop(self):
         if self._session.session is None:

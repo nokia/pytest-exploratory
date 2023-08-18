@@ -362,31 +362,46 @@ def test_exists():
         # TODO better way to remove the separator
         relative = relative.lstrip("/:")
         return relative
-    
-    def runtests(self, line=""):
+
+    def runtests(self, args=tuple()):
         """Run the tests under the current context."""
         parser = argparse.ArgumentParser(
             prog='pytest_runtests',
-            description='Runs selected tests in ipython'
+            description='Run tests under the current context'
         )
-        parser.add_argument('-tests',
+        parser.add_argument('tests',
                             nargs='*',
+                            metavar="TEST",
                             default=tuple(),
-                            help='Tests that you want to run')
+                            help='Test names to run, relative to the current context')
         parser.add_argument('-k',
-                            nargs='?',
+                            metavar="EXPRESSION",
                             default=None,
-                            help='-k flag for pytest')
+                            help='only run tests which match the given substring expression')
         parser.add_argument('-m',
-                            nargs='*',
+                            metavar="MARKEXPR",
                             default=None,
-                            help='-m flag for pytest')
-        arguments = parser.parse_args(shlex.split(line))
+                            help='only run tests matching given mark expression')
+        if isinstance(args, str):
+            args = shlex.split(args)
+        arguments = parser.parse_args(args)
+        restore_keyword = []
+        restore_markexpr = []
         if arguments.k:
+            restore_keyword.append(self.config.option.keyword)
             self.config.option.keyword = arguments.k
         if arguments.m:
-            self.config.option.markexpr = " ".join(arguments.m)
-        testnames = arguments.tests
+            restore_markexpr.append(self.config.option.markexpr)
+            self.config.option.markexpr = arguments.m
+        try:
+            self._runtests(arguments.tests)
+        finally:
+            if restore_markexpr:
+                self.config.option.markexpr = restore_markexpr[0]
+            if restore_keyword:
+                self.config.option.keyword = restore_keyword[0]
+
+    def _runtests(self, testnames):
         reloaded = self._reload()
         if self.context_item is self.context_node:
             items = [self.context_item]
@@ -404,7 +419,8 @@ def test_exists():
             items[:] = new_items
         if reloaded:
             _reload_items(items)
-        self._teardown_if_needed(lastitem, items[0])
+        if items:
+            self._teardown_if_needed(lastitem, items[0])
         for i, item in enumerate(items):
             nextitem = items[i + 1] if i + 1 < len(items) else lastitem
             self.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
