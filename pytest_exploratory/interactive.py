@@ -11,10 +11,12 @@ import warnings
 import pytest
 import argparse
 import shlex
+from contextlib import contextmanager
 from _pytest.config import _prepareconfig
 from _pytest.main import Session
 from _pytest.python import CallSpec2, Metafunc, FunctionDefinition
 from _pytest.mark import ParameterSet
+import _pytest.debugging
 
 
 LOGGER = logging.getLogger(__name__)
@@ -543,3 +545,33 @@ def test_exists():
         """Stop pytest."""
         self.config._ensure_unconfigure()
         self.config = None
+
+    @contextmanager
+    def temporary_pdb(self, usepdb=True):
+        """Temporarily enable pdb."""
+        if not usepdb:
+            yield
+            return
+        if self.config is None:
+            yield
+            return
+        # Relying too much on pytest internals...
+        pdbinvoke = self.config.pluginmanager.get_plugin("pdbinvoke")
+        if pdbinvoke:
+            # Plugin already there
+            yield
+            return
+        old_usepdb = self.config.option.usepdb
+        self.config.option.usepdb = True
+        try:
+            _pytest.debugging.pytest_configure(self.config)
+            cleanup = self.config._cleanup.pop()
+            try:
+                yield
+            finally:
+                cleanup()
+                self.config.pluginmanager.unregister(
+                    self.config.pluginmanager.get_plugin("pdbinvoke")
+                )
+        finally:
+            self.config.option.usepdb = old_usepdb

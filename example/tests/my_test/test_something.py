@@ -13,3 +13,7 @@ def other_fixture():
 
 def test_case(my_fixture):
     assert my_fixture == "value"
+
+
+def test_fail(my_fixture):
+    assert my_fixture == "other"
